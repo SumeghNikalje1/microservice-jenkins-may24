@@ -1,6 +1,12 @@
 FROM python:3.12
+
 WORKDIR /app
-COPY . .
-RUN pip install flask
+
+COPY . /app
+
+RUN pip install flask flask-cors
+
 EXPOSE 1003
+
 CMD ["python3","index.py" ]
+
