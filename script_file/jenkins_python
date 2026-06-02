@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Git Checkout') {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/SumeghNikalje1/microservice-jenkins-may24.git'
+                    ]]
+                )
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('wishlist-microservice-python') {
+                    sh 'docker build -t python .'
+                }
+            }
+        }
+
+        stage('DOCKER PUSH') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    sh 'docker tag python strominspiron/python-microservice:latest'
+                    sh 'docker push strominspiron/python-microservice:latest'
+                    sh 'docker logout'
+                }
+            }
+        }
+        
+        stage('Deployment') {
+    steps {
+        sh 'docker rm -f wishlist-service || true'
+        sh 'docker run -d --name wishlist-service -p 1003:1003 strominspiron/python-microservice:latest'
+    }
+}
+    }
+}
