@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    tools {
+        nodejs "ndjs"
+    }
+    stages {
+    
+            stage('Git Checkout') {
+             steps {
+            checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/SumeghNikalje1/microservice-jenkins-may24.git']])                
+                }
+            }
+
+        stage('Build') {
+            steps {
+                dir('cart-microservice-nodejs') {
+                    sh 'npm install'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('cart-microservice-nodejs') {
+                    sh 'docker build -t node .'
+                }
+            }
+        }
+
+      stage('DOCKER PUSH') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )
+        ]) {
+            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+            sh 'docker tag node strominspiron/devops1:latest'
+            sh 'docker push strominspiron/devops1:latest'
+            sh 'docker logout'
+        }
+    }
+}
+
+
+        stage('Approval') {
+            steps {
+                input 'Approval for production'
+            }
+        } 
+
+        stage('Deployment') {
+            steps {
+             sh 'docker rm -f cart-service || true'
+             sh 'docker run -d --name node -p 1004:1004 strominspiron/devops1:latest'
+            }
+
+            post {
+               
+                failure{
+                    echo 'failure'
+                    mail bcc: '', body: 'hii project is failed', cc: '', from: '', replyTo: '', subject: 'project for node', to: 'strominspiron@gmail.com'
+                }
+                
+                }
+            }
+        }
+
+       
+    }

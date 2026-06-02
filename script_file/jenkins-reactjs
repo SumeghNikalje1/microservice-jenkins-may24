@@ -1,0 +1,68 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'ndjs'
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Git Checkout') {
+            steps {
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/SumeghNikalje1/microservice-jenkins-may24.git']]
+                )
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                dir('ui-web-app-reactjs') {
+                    sh 'docker build --no-cache -t ui-web-app .'
+                }
+            }
+        }
+        
+        stage('DOCKER PUSH') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                    sh 'docker tag ui-web-app:latest strominspiron/ui-web-app:latest'
+                    sh 'docker push strominspiron/ui-web-app:latest'
+                    sh 'docker logout'
+                }
+            }
+        }
+        
+          stage('Deployment') {
+             steps {
+             sh 'docker rm -f ui-web-app || true'
+             sh 'docker run -d --name ui-web-app -p 9090:9090 strominspiron/ui-web-app:latest'
+            }
+
+              post {
+               
+                failure{
+                    echo 'failure'
+                    mail bcc: '', body: 'hii project is failed', cc: '', from: '', replyTo: '', subject: 'project for reactjs', to: 'strominspiron@gmail.com'
+                       }
+                
+                   }
+        }
+       
+        }
+}
