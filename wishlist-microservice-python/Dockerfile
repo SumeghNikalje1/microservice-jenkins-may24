@@ -8,4 +8,5 @@ RUN pip install flask flask-cors
 
 EXPOSE 1003
 
-CMD ["python3", "index.py"]
+CMD ["python3","index.py" ]
+
