@@ -7,7 +7,7 @@ RUN mvn clean package
 FROM eclipse-temurin:11-jre
 
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY target/*.jar app.jar
 
 EXPOSE 1001
 
